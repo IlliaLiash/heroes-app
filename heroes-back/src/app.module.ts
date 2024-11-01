@@ -6,7 +6,7 @@ import { join } from 'path';
 
 @Module({
   imports: [
-    MongooseModule.forRoot(process.env.MONGO_URI),
+    MongooseModule.forRoot('mongodb://localhost/superhero'),
     SuperheroModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploads'),

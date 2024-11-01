@@ -1,7 +1,13 @@
 import { Superhero, SuperheroDocument } from '@/db/superhero.schema';
+import { PaginationDto } from '@/modules/superhero/dto/pagination.dto';
 import { CreateSuperheroDto } from '@/modules/superhero/dto/superhero.create.dto';
 import { UpdateSuperheroDto } from '@/modules/superhero/dto/superhero.update.dto';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { PaginatedResult } from '@/utils/types/pagination.type';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
@@ -70,5 +76,36 @@ export class SuperheroService {
     hero.images.push({ url: imageUrl, isMain });
 
     return hero.save();
+  }
+
+  async findPaginated(
+    paginationDto: PaginationDto,
+  ): Promise<PaginatedResult<SuperheroDocument>> {
+    const { page = 1, limit = 10 } = paginationDto;
+
+    const skip = (page - 1) * limit;
+
+    const totalItems = await this.superheroModel.countDocuments().exec();
+
+    const totalPages = Math.ceil(totalItems / limit);
+
+    if (page > totalPages) {
+      throw new BadRequestException('Page greater than total pages');
+    }
+
+    const isNextPage = page < totalPages;
+
+    const items = await this.superheroModel
+      .find()
+      .skip(skip)
+      .limit(limit)
+      .exec();
+
+    return {
+      currentPage: page,
+      totalPages,
+      isNextPage,
+      items,
+    };
   }
 }

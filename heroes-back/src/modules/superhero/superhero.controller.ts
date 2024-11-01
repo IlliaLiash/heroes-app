@@ -1,7 +1,10 @@
+import { Superhero } from '@/db/superhero.schema';
+import { PaginationDto } from '@/modules/superhero/dto/pagination.dto';
 import { CreateSuperheroDto } from '@/modules/superhero/dto/superhero.create.dto';
 import { UpdateSuperheroDto } from '@/modules/superhero/dto/superhero.update.dto';
 import { UploadImageDto } from '@/modules/superhero/dto/upload-image.dto';
 import { SuperheroService } from '@/modules/superhero/superhero.service';
+import { PaginatedResult } from '@/utils/types/pagination.type';
 import {
   BadRequestException,
   Body,
@@ -12,6 +15,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -65,7 +69,6 @@ export class SuperheroController {
         },
       }),
       fileFilter: (req, file, cb) => {
-        // Accept only image files
         if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
           cb(new BadRequestException('Only image files are allowed!'), false);
         } else {
@@ -89,5 +92,13 @@ export class SuperheroController {
     const isMain = uploadImageDto.isMain || false;
 
     return this.superheroService.addImage(id, imageUrl, isMain);
+  }
+
+  @Get()
+  @HttpCode(200)
+  async find(
+    @Query() paginationDto: PaginationDto,
+  ): Promise<PaginatedResult<Superhero>> {
+    return this.superheroService.findPaginated(paginationDto);
   }
 }
