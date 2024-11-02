@@ -1,4 +1,4 @@
-import { IsString } from 'class-validator';
+import { IsString, IsOptional, IsArray } from 'class-validator';
 
 export class CreateSuperheroDto {
   @IsString()
@@ -8,8 +8,13 @@ export class CreateSuperheroDto {
   real_name: string;
 
   @IsString()
-  origin_desciption: string;
+  origin_description: string;
 
   @IsString()
   superpowers: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  images?: string[];
 }

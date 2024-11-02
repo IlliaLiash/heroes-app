@@ -1,10 +1,3 @@
-import { Superhero } from '@/db/superhero.schema';
-import { PaginationDto } from '@/modules/superhero/dto/pagination.dto';
-import { CreateSuperheroDto } from '@/modules/superhero/dto/superhero.create.dto';
-import { UpdateSuperheroDto } from '@/modules/superhero/dto/superhero.update.dto';
-import { UploadImageDto } from '@/modules/superhero/dto/upload-image.dto';
-import { SuperheroService } from '@/modules/superhero/superhero.service';
-import { PaginatedResult } from '@/utils/types/pagination.type';
 import {
   BadRequestException,
   Body,
@@ -16,13 +9,16 @@ import {
   Patch,
   Post,
   Query,
-  UploadedFile,
-  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { SuperheroService } from '@/modules/superhero/superhero.service';
+import { CreateSuperheroDto } from '@/modules/superhero/dto/superhero.create.dto';
+import { UpdateSuperheroDto } from '@/modules/superhero/dto/superhero.update.dto';
+import { PaginationDto } from '@/modules/superhero/dto/pagination.dto';
+import { PaginatedResult } from '@/utils/types/pagination.type';
+import { Superhero } from '@/db/superhero.schema';
+import { UploadImages } from '@/utils/decorators/upload-images.decorator';
 
 @ApiTags('superhero')
 @Controller('superhero')
@@ -51,47 +47,37 @@ export class SuperheroController {
   }
 
   @Post()
+  @UploadImages(10)
   @HttpCode(201)
-  async create(@Body() createSuperheroDto: CreateSuperheroDto) {
-    return this.superheroService.create(createSuperheroDto);
+  async create(
+    @Body() createSuperheroDto: CreateSuperheroDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    let imageUrls: string[] = [];
+
+    if (files && files.length > 0) {
+      imageUrls = files.map((file) => `/uploads/${file.filename}`);
+    }
+
+    const newSuperhero = { ...createSuperheroDto, images: imageUrls };
+
+    return this.superheroService.create(newSuperhero);
   }
 
   @Post(':id/images')
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
-        },
-      }),
-      fileFilter: (req, file, cb) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-          cb(new BadRequestException('Only image files are allowed!'), false);
-        } else {
-          cb(null, true);
-        }
-      },
-      limits: { fileSize: 5 * 1024 * 1024 },
-    }),
-  )
-  async uploadImage(
+  @UploadImages(10)
+  @HttpCode(201)
+  async addImages(
     @Param('id') id: string,
-    @UploadedFile() file: Express.Multer.File,
-    @Body() uploadImageDto: UploadImageDto,
+    @UploadedFiles() files: Express.Multer.File[],
   ) {
-    if (!file) {
-      throw new BadRequestException('File is not provided or invalid');
+    if (!files || files.length === 0) {
+      throw new BadRequestException('No image files provided.');
     }
 
-    const imageUrl = `/uploads/${file.filename}`;
+    const imageUrls = files.map((file) => `/uploads/${file.filename}`);
 
-    const isMain = uploadImageDto.isMain || false;
-
-    return this.superheroService.addImage(id, imageUrl, isMain);
+    return this.superheroService.addImages(id, imageUrls);
   }
 
   @Get()

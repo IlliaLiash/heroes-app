@@ -2,31 +2,21 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
 @Schema()
-export class Image {
-  @Prop({ required: true })
-  url: string;
-
-  @Prop({ default: false })
-  isMain: boolean;
-}
-const ImageSchema = SchemaFactory.createForClass(Image);
-
-@Schema()
 export class Superhero {
-  @Prop()
+  @Prop({ required: true })
   nickname: string;
 
-  @Prop()
+  @Prop({ required: true })
   real_name: string;
 
-  @Prop()
-  origin_desciption: string;
+  @Prop({ required: true })
+  origin_description: string;
 
-  @Prop()
+  @Prop({ required: true })
   superpowers: string;
 
-  @Prop({ type: [ImageSchema], default: [] })
-  images: Image[];
+  @Prop({ type: [String], default: [] })
+  images: string[];
 }
 
 export type SuperheroDocument = Superhero & Document;

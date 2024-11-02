@@ -1,15 +1,15 @@
-import { Superhero, SuperheroDocument } from '@/db/superhero.schema';
-import { PaginationDto } from '@/modules/superhero/dto/pagination.dto';
-import { CreateSuperheroDto } from '@/modules/superhero/dto/superhero.create.dto';
-import { UpdateSuperheroDto } from '@/modules/superhero/dto/superhero.update.dto';
-import { PaginatedResult } from '@/utils/types/pagination.type';
 import {
-  BadRequestException,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { Superhero, SuperheroDocument } from '@/db/superhero.schema';
+import { CreateSuperheroDto } from '@/modules/superhero/dto/superhero.create.dto';
+import { UpdateSuperheroDto } from '@/modules/superhero/dto/superhero.update.dto';
+import { PaginationDto } from '@/modules/superhero/dto/pagination.dto';
+import { PaginatedResult } from '@/utils/types/pagination.type';
 
 @Injectable()
 export class SuperheroService {
@@ -28,7 +28,7 @@ export class SuperheroService {
     return hero;
   }
 
-  create(newSuperhero: CreateSuperheroDto): Promise<SuperheroDocument> {
+  async create(newSuperhero: CreateSuperheroDto): Promise<SuperheroDocument> {
     return this.superheroModel.create(newSuperhero);
   }
 
@@ -57,23 +57,14 @@ export class SuperheroService {
     return deletedHero;
   }
 
-  async addImage(
-    superheroId: string,
-    imageUrl: string,
-    isMain: boolean = false,
-  ): Promise<SuperheroDocument> {
-    const hero = await this.superheroModel.findById(superheroId);
+  async addImages(id: string, imageUrls: string[]): Promise<SuperheroDocument> {
+    const hero = await this.superheroModel.findById(id).exec();
+
     if (!hero) {
-      throw new NotFoundException(`Superhero with id ${superheroId} not found`);
+      throw new NotFoundException(`Superhero with id ${id} not found`);
     }
 
-    if (isMain) {
-      hero.images.forEach((image) => {
-        image.isMain = false;
-      });
-    }
-
-    hero.images.push({ url: imageUrl, isMain });
+    hero.images.push(...imageUrls);
 
     return hero.save();
   }
@@ -89,7 +80,7 @@ export class SuperheroService {
 
     const totalPages = Math.ceil(totalItems / limit);
 
-    if (page > totalPages) {
+    if (page > totalPages && totalPages !== 0) {
       throw new BadRequestException('Page greater than total pages');
     }
 
@@ -106,6 +97,7 @@ export class SuperheroService {
       totalPages,
       isNextPage,
       items,
+      totalItems,
     };
   }
 }
