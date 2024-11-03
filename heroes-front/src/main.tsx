@@ -18,6 +18,10 @@ const router = createBrowserRouter([
     path: '/create',
     element: <CreateSuperheroPage />,
   },
+  {
+    path: '/:id',
+    element: <CreateSuperheroPage />,
+  },
 ]);
 
 createRoot(document.getElementById('root')!).render(

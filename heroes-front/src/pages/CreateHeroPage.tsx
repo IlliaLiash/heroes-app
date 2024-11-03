@@ -1,13 +1,24 @@
-import React from 'react';
-import { Formik, Form, ErrorMessage, FormikHelpers, FieldArray } from 'formik';
-import { useCreateHero } from '../hooks/superhero';
-import { validationSchema } from '../utils/validation/create-hero-form';
+import React, { useState, useEffect } from 'react';
+import { Formik, Form, FormikHelpers } from 'formik';
 import TextInput from '../components/TextInput';
 import TextAreaInput from '../components/TextAreaInput';
+import ImageUpload from '../components/ImageUpload';
 import Button from '../components/Button';
 import toast from 'react-hot-toast';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  createValidationSchema,
+  updateValidationSchema,
+} from '../utils/validation/superhero-form';
+import {
+  useCreateHero,
+  useOneHero,
+  useUpdateHero,
+  useRemoveHero,
+} from '../hooks/superhero';
+import Loader from '../components/Loader';
 
-interface CreateSuperhero {
+interface CreateHeroFormValues {
   nickname: string;
   real_name: string;
   origin_description: string;
@@ -15,66 +26,138 @@ interface CreateSuperhero {
   images: File[];
 }
 
-const CreateSuperheroPage: React.FC = () => {
-  const { mutate: createHero } = useCreateHero();
+const CreateHeroPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
 
-  const initialValues: CreateSuperhero = {
+  const navigate = useNavigate();
+
+  const isEdit = !!id;
+
+  const { data: heroData, isLoading: isHeroLoading } = useOneHero(id || '');
+
+  const createHeroMutation = useCreateHero();
+  const updateHeroMutation = useUpdateHero();
+  const removeHeroMutation = useRemoveHero();
+
+  const [initialValues, setInitialValues] = useState<CreateHeroFormValues>({
     nickname: '',
     real_name: '',
     origin_description: '',
     superpowers: '',
     images: [],
-  };
+  });
 
-  const handleSubmit = async (
-    values: CreateSuperhero,
-    actions: FormikHelpers<CreateSuperhero>
-  ) => {
-    try {
-      createHero(values);
-
-      toast.success('Hero created successfully');
-      actions.resetForm();
-    } catch (error) {
-      toast.error('An error occurred while creating the hero');
-    } finally {
-      actions.setSubmitting(false);
+  useEffect(() => {
+    if (isEdit && heroData) {
+      setInitialValues({
+        nickname: heroData.nickname,
+        real_name: heroData.real_name,
+        origin_description: heroData.origin_description,
+        superpowers: heroData.superpowers,
+        images: [],
+      });
     }
+  }, [isEdit, heroData]);
+
+  const handleCreate = async (
+    values: CreateHeroFormValues,
+    actions: FormikHelpers<CreateHeroFormValues>
+  ) => {
+    await createHeroMutation.mutateAsync(values, {
+      onSuccess: () => {
+        toast.success('Hero created successfully!');
+        actions.resetForm();
+      },
+      onError: (error: any) => {
+        toast.error(`Error creating hero: ${error.message}`);
+      },
+    });
+
+    actions.setSubmitting(false);
   };
+
+  const handleUpdate = async (
+    values: CreateHeroFormValues,
+    actions: FormikHelpers<CreateHeroFormValues>
+  ) => {
+    const updateData = {
+      nickname: values.nickname,
+      real_name: values.real_name,
+      origin_description: values.origin_description,
+      superpowers: values.superpowers,
+    };
+
+    updateHeroMutation.mutate(
+      {
+        id: id!,
+        data: updateData,
+      },
+      {
+        onSuccess: () => {
+          toast.success('Hero updated successfully!');
+        },
+        onError: (error: any) => {
+          toast.error(`Error updating hero: ${error.message}`);
+        },
+      }
+    );
+
+    actions.setSubmitting(false);
+  };
+
+  const handleDelete = () => {
+    removeHeroMutation.mutate(id!, {
+      onSuccess: () => {
+        toast.success('Hero deleted successfully!');
+        navigate('/');
+      },
+
+      onError: (error: any) => {
+        toast.error(`Error deleting hero: ${error.message}`);
+      },
+    });
+  };
+
+  if (isEdit && isHeroLoading) {
+    return <Loader />;
+  }
 
   return (
     <div className='flex min-h-screen items-center justify-center bg-gray-100 p-4'>
       <div className='w-full max-w-2xl rounded bg-white px-8 pb-8 pt-6 shadow-md'>
         <h2 className='mb-6 text-center text-2xl font-bold'>
-          Create New Superhero
+          {isEdit ? 'Hero Profile' : 'Create New Hero'}
         </h2>
 
         <Formik
+          enableReinitialize
           initialValues={initialValues}
-          validationSchema={validationSchema}
-          onSubmit={handleSubmit}
+          validationSchema={
+            isEdit ? updateValidationSchema : createValidationSchema
+          }
+          onSubmit={isEdit ? handleUpdate : handleCreate}
         >
-          {({ values, isSubmitting, setFieldValue }) => (
+          {() => (
             <Form>
               <TextInput
                 label='Nickname'
                 id='nickname'
                 name='nickname'
-                placeholder='Enter superhero nickname'
+                placeholder='Enter hero nickname'
               />
 
               <TextInput
                 label='Real Name'
                 id='real_name'
                 name='real_name'
-                placeholder='Enter superhero real name'
+                placeholder='Enter hero real name'
               />
 
               <TextAreaInput
                 label='Origin Description'
                 id='origin_description'
                 name='origin_description'
-                placeholder='Describe the origin of your superhero'
+                placeholder='Describe the origin of your hero'
                 rows={3}
               />
 
@@ -82,7 +165,7 @@ const CreateSuperheroPage: React.FC = () => {
                 label='Superpowers'
                 id='superpowers'
                 name='superpowers'
-                placeholder='List your superheros superpowers'
+                placeholder="List your hero's superpowers"
                 rows={3}
               />
 
@@ -90,79 +173,39 @@ const CreateSuperheroPage: React.FC = () => {
                 <label className='mb-2 block text-sm font-bold text-gray-700'>
                   Images
                 </label>
-                <FieldArray name='images'>
-                  {({ push, remove }) => (
-                    <div>
-                      {values.images && values.images.length > 0 && (
-                        <div className='space-y-4'>
-                          {values.images.map((_, index) => (
-                            <div
-                              key={index}
-                              className='flex items-center space-x-4'
-                            >
-                              <input
-                                id={`images.${index}`}
-                                name={`images.${index}`}
-                                type='file'
-                                accept='image/*'
-                                onChange={(event) => {
-                                  const file =
-                                    event.currentTarget.files &&
-                                    event.currentTarget.files[0];
-                                  if (file) {
-                                    setFieldValue(`images.${index}`, file);
-                                  }
-                                }}
-                                className='block w-full text-sm text-gray-500 file:mr-4 file:rounded file:border file:border-gray-300 file:bg-gray-50 file:px-4 file:py-2 file:text-gray-700 hover:file:bg-gray-100'
-                              />
-                              {values?.images[index] && (
-                                <img
-                                  src={URL.createObjectURL(
-                                    values?.images[index]
-                                  )}
-                                  alt={`Preview ${index + 1}`}
-                                  className='h-16 w-16 rounded object-cover'
-                                />
-                              )}
-                              <button
-                                type='button'
-                                onClick={() => remove(index)}
-                                className='text-red-500 hover:text-red-700 focus:outline-none'
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                <div className='flex flex-wrap gap-4'>
+                  {isEdit &&
+                    heroData &&
+                    heroData.images.map((imageUrl: string, index: number) => (
+                      <ImageUpload
+                        key={index}
+                        heroId={id!}
+                        existingUrl={imageUrl}
+                        mode='edit'
+                      />
+                    ))}
 
-                      {values.images.length < 10 && (
-                        <Button
-                          type='button'
-                          onClick={() => push(null)}
-                          className='mt-4'
-                        >
-                          Add Image
-                        </Button>
-                      )}
-                    </div>
+                  {isEdit ? (
+                    <ImageUpload heroId={id!} mode='edit' />
+                  ) : (
+                    <ImageUpload heroId='' mode='create' />
                   )}
-                </FieldArray>
-                <ErrorMessage
-                  name='images'
-                  component='div'
-                  className='mt-2 text-xs italic text-red-500'
-                />
+                </div>
               </div>
 
-              <div className='flex items-center justify-center'>
-                <Button
-                  type='submit'
-                  disabled={isSubmitting}
-                  className={`${isSubmitting ? 'cursor-not-allowed opacity-50' : ''}`}
-                >
-                  {isSubmitting ? 'Creating...' : 'Create Superhero'}
+              <div className='flex items-center justify-between'>
+                <Button type='submit'>
+                  {isEdit ? 'Update Hero' : 'Create Hero'}
                 </Button>
+                {isEdit && (
+                  <Button
+                    type='button'
+                    className='bg-red-500 hover:bg-red-700'
+                    onClick={handleDelete}
+                  >
+                    Delete Hero
+                  </Button>
+                )}
               </div>
             </Form>
           )}
@@ -172,4 +215,4 @@ const CreateSuperheroPage: React.FC = () => {
   );
 };
 
-export default CreateSuperheroPage;
+export default CreateHeroPage;

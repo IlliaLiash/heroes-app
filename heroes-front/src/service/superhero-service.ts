@@ -25,9 +25,10 @@ const fetchOneHero = async (id: string): Promise<Superhero> => {
 
 const createHero = async (heroData: CreateSuperhero): Promise<Superhero> => {
   const formData = new FormData();
+
   Object.entries(heroData).forEach(([key, value]) => {
-    if (Array.isArray(value)) {
-      value.forEach((file) => formData.append(key, file));
+    if (key === 'images' && Array.isArray(value)) {
+      value.forEach((file) => formData.append('images', file));
     } else {
       formData.append(key, value);
     }
@@ -42,21 +43,26 @@ const createHero = async (heroData: CreateSuperhero): Promise<Superhero> => {
   return data;
 };
 
-const updateHero = async (heroData: UpdateSuperhero): Promise<Superhero> => {
+const updateHero = async (
+  id: string,
+  heroData: UpdateSuperhero
+): Promise<Superhero> => {
+  const { data } = await api.patch<Superhero>(`superhero/${id}`, heroData);
+
+  return data;
+};
+
+const removeHero = async (id: string): Promise<void> => {
+  await api.delete(`superhero/${id}`);
+};
+
+const addImages = async (id: string, images: File[]): Promise<Superhero> => {
   const formData = new FormData();
 
-  Object.entries(heroData).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((file) => formData.append(key, file));
-      } else {
-        formData.append(key, value.toString());
-      }
-    }
-  });
+  images.forEach((image) => formData.append('images', image));
 
-  const { data } = await api.put<Superhero>(
-    `superhero/${heroData._id}`,
+  const { data } = await api.post<Superhero>(
+    `superhero/${id}/images`,
     formData,
     {
       headers: {
@@ -64,11 +70,19 @@ const updateHero = async (heroData: UpdateSuperhero): Promise<Superhero> => {
       },
     }
   );
+
   return data;
 };
 
-const removeHero = async (id: string): Promise<void> => {
-  await api.delete(`superhero/${id}`);
+const removeImages = async (
+  id: string,
+  imageUrls: string[]
+): Promise<Superhero> => {
+  const { data } = await api.delete<Superhero>(`superhero/${id}/images`, {
+    data: { imageUrls },
+  });
+
+  return data;
 };
 
 export {
@@ -77,4 +91,6 @@ export {
   createHero,
   updateHero,
   removeHero,
+  addImages,
+  removeImages,
 };

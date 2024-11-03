@@ -11,6 +11,8 @@ import {
   createHero,
   updateHero,
   removeHero,
+  removeImages,
+  addImages,
 } from '../service/superhero-service';
 
 export const usePaginatedHeroes = (page: number, limit: number) =>
@@ -38,8 +40,8 @@ export const useCreateHero = () => {
 
 export const useUpdateHero = () => {
   const queryClient = useQueryClient();
-  return useMutation<Superhero, Error, UpdateSuperhero>({
-    mutationFn: updateHero,
+  return useMutation<Superhero, Error, { id: string; data: UpdateSuperhero }>({
+    mutationFn: ({ id, data }) => updateHero(id, data),
     onSuccess: (data: Superhero) => {
       queryClient.invalidateQueries({ queryKey: ['superheroes'] });
       queryClient.invalidateQueries({ queryKey: ['superhero', data._id] });
@@ -53,6 +55,26 @@ export const useRemoveHero = () => {
     mutationFn: (id) => removeHero(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['superheroes'] });
+    },
+  });
+};
+
+export const useAddImages = () => {
+  const queryClient = useQueryClient();
+  return useMutation<Superhero, Error, { id: string; images: File[] }>({
+    mutationFn: ({ id, images }) => addImages(id, images),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['superhero'] });
+    },
+  });
+};
+
+export const useRemoveImages = () => {
+  const queryClient = useQueryClient();
+  return useMutation<Superhero, Error, { id: string; imageUrls: string[] }>({
+    mutationFn: ({ id, imageUrls }) => removeImages(id, imageUrls),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['superhero'] });
     },
   });
 };

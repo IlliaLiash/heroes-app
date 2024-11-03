@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import Loader from '../components/Loader';
-import HeroesListItem from '../components/HeroesListItem';
 import Pagination from 'rc-pagination';
 import 'rc-pagination/assets/index.css';
 import Button from '../components/Button';
 import { usePaginatedHeroes } from '../hooks/superhero';
 import { useNavigate } from 'react-router-dom';
+import HeroesListItem from '../components/HeroesListItem';
 
 const HeroesListPage = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -25,36 +25,44 @@ const HeroesListPage = () => {
   }
 
   if (error) {
-    return <div>Error: {error.message}</div>;
-  }
-
-  if (!isLoading && (!data?.items.length || !data)) {
-    return <div>No heroes created yet</div>;
+    return (
+      <div className='flex h-screen items-center justify-center bg-red-100'>
+        <p className='text-lg text-red-500'>Error: {error.message}</p>
+      </div>
+    );
   }
 
   return (
-    <div className='my-10 flex flex-col items-center'>
-      <div className='flex w-4/5 flex-col justify-between gap-10'>
-        <div>
-          <Button onClick={() => navigate('/create')}>
-            <p>Create Hero</p>
-          </Button>
+    <div className='min-h-screen bg-gray-100 px-4 py-10'>
+      <div className='container mx-auto'>
+        <div className='mb-8 flex flex-col items-center justify-between sm:flex-row'>
+          <h2 className='mb-4 text-3xl font-bold text-gray-800 sm:mb-0'>
+            Heroes List
+          </h2>
+          <Button onClick={() => navigate('/create')}>Create Hero</Button>
         </div>
 
-        <div className='flex flex-row flex-wrap gap-4'>
+        {data?.totalItems === 0 && (
+          <p className='text-center text-lg text-gray-800'>
+            No heroes found. Please create a new hero.
+          </p>
+        )}
+
+        <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3'>
           {data?.items.map((hero) => (
-            <div key={hero._id}>
-              <HeroesListItem hero={hero} />
-            </div>
+            <HeroesListItem key={hero._id} hero={hero} />
           ))}
         </div>
-        <Pagination
-          className='mt-4 flex justify-center'
-          current={data?.currentPage}
-          pageSize={limit}
-          total={data?.totalItems}
-          onChange={handlePageChange}
-        />
+
+        <div className='mt-8 flex justify-center'>
+          <Pagination
+            current={data?.currentPage}
+            pageSize={limit}
+            total={data?.totalItems}
+            onChange={handlePageChange}
+            className='rc-pagination'
+          />
+        </div>
       </div>
     </div>
   );

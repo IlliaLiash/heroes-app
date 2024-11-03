@@ -1,32 +1,36 @@
 import React from 'react';
 import { Superhero } from '../utils/types/superhero';
+import { Link } from 'react-router-dom';
 
 interface HeroesListItemProps {
   hero: Superhero;
 }
 
 const HeroesListItem = ({ hero }: HeroesListItemProps) => {
+  const defaultImage = '/profile-image.webp';
+
+  const heroImage = hero.images?.[0]
+    ? `${import.meta.env.VITE_BACKEND_API}${hero.images[0]}`
+    : defaultImage;
+
   return (
-    <div className='flex flex-col items-center gap-4 bg-gray-300 px-12 py-10 shadow-md'>
-      {hero.images?.length ? (
+    <Link
+      to={`/${hero._id}`}
+      className='block overflow-hidden rounded-lg bg-white shadow-md transition-shadow duration-300 hover:shadow-xl'
+    >
+      <div className='h-48 w-full overflow-hidden'>
         <img
-          src={
-            hero.images[0]
-              ? `${import.meta.env.VITE_BACKEND_API}${hero.images[0]}`
-              : '../../../public/profile-image.webp'
-          }
+          src={heroImage}
           alt={`${hero.nickname} image`}
-          className='h-32 w-32 rounded-lg object-cover'
+          className='h-full w-full transform object-cover transition-transform duration-300 hover:scale-105'
         />
-      ) : (
-        <img
-          src='../../../public/profile-image.webp'
-          alt={'empty profile image'}
-          className='h-32 w-32 rounded-lg object-cover'
-        />
-      )}
-      <p>{hero.nickname}</p>
-    </div>
+      </div>
+      <div className='p-4'>
+        <h3 className='text-center text-xl font-semibold text-gray-800'>
+          {hero.nickname}
+        </h3>
+      </div>
+    </Link>
   );
 };
 
