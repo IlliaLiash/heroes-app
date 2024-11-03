@@ -56,7 +56,7 @@ export class SuperheroController {
     let imageUrls: string[] = [];
 
     if (files && files.length > 0) {
-      imageUrls = files.map((file) => `/uploads/${file.filename}`);
+      imageUrls = files.map((file) => `/images/${file.filename}`);
     }
 
     const newSuperhero = { ...createSuperheroDto, images: imageUrls };
@@ -71,7 +71,7 @@ export class SuperheroController {
     @Param('id') id: string,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    const imageUrls = files.map((file) => `/uploads/${file.filename}`);
+    const imageUrls = files.map((file) => `/images/${file.filename}`);
 
     return this.superheroService.addImages(id, imageUrls);
   }

@@ -6,7 +6,7 @@ import { BadRequestException } from '@nestjs/common';
 import * as fs from 'fs';
 
 export function UploadImages(maxCount: number = 10) {
-  const uploadPath = resolve(__dirname, '..', '..', 'uploads');
+  const uploadPath = resolve(__dirname, '..', '..', '..', 'public', 'images');
 
   if (!fs.existsSync(uploadPath)) {
     fs.mkdirSync(uploadPath, { recursive: true });
@@ -23,7 +23,7 @@ export function UploadImages(maxCount: number = 10) {
               Math.random() * 1e9,
             )}`;
             const ext = extname(file.originalname);
-            cb(null, `images-${uniqueSuffix}${ext}`);
+            cb(null, `${uniqueSuffix}${ext}`);
           },
         }),
         fileFilter: (req, file, cb) => {

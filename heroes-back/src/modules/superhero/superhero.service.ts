@@ -119,7 +119,14 @@ export class SuperheroService {
         hero.images.splice(index, 1);
 
         const filename = path.basename(url);
-        const filePath = path.join(__dirname, '..', '..', 'uploads', filename); // Adjust the path as per your project structure
+        const filePath = path.join(
+          __dirname,
+          '..',
+          '..',
+          'public',
+          'images',
+          filename,
+        );
 
         if (fs.existsSync(filePath)) {
           try {
