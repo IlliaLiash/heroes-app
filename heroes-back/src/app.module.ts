@@ -9,7 +9,7 @@ import { join } from 'path';
     MongooseModule.forRoot('mongodb://localhost/superhero'),
     SuperheroModule,
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
+      rootPath: join(__dirname, 'uploads'),
       serveRoot: '/uploads',
     }),
   ],

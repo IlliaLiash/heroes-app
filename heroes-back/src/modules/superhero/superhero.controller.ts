@@ -71,10 +71,6 @@ export class SuperheroController {
     @Param('id') id: string,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    if (!files || files.length === 0) {
-      throw new BadRequestException('No image files provided.');
-    }
-
     const imageUrls = files.map((file) => `/uploads/${file.filename}`);
 
     return this.superheroService.addImages(id, imageUrls);
@@ -86,5 +82,14 @@ export class SuperheroController {
     @Query() paginationDto: PaginationDto,
   ): Promise<PaginatedResult<Superhero>> {
     return this.superheroService.findPaginated(paginationDto);
+  }
+
+  @Delete(':id/images')
+  @HttpCode(200)
+  async removeImages(
+    @Param('id') id: string,
+    @Body('imageUrls') imageUrls: string[],
+  ) {
+    return this.superheroService.removeImages(id, imageUrls);
   }
 }
