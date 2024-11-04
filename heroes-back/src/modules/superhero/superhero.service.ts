@@ -50,13 +50,19 @@ export class SuperheroService {
   }
 
   async delete(id: string): Promise<SuperheroDocument> {
-    const deletedHero = await this.superheroModel.findByIdAndDelete(id).exec();
+    const hero = await this.superheroModel.findById(id).exec();
 
-    if (!deletedHero) {
+    if (!hero) {
       throw new NotFoundException(`Superhero with id ${id} not found`);
     }
 
-    return deletedHero;
+    if (hero.images.length > 0) {
+      await this.removeImages(id, hero.images);
+    }
+
+    await this.superheroModel.deleteOne({ _id: id });
+
+    return hero;
   }
 
   async addImages(id: string, imageUrls: string[]): Promise<SuperheroDocument> {
@@ -110,6 +116,7 @@ export class SuperheroService {
     const hero = await this.superheroModel.findById(id).exec();
 
     if (!hero) {
+      console.log(`Superhero with id ${id} not found`);
       throw new NotFoundException(`Superhero with id ${id} not found`);
     }
 
@@ -121,6 +128,7 @@ export class SuperheroService {
         const filename = path.basename(url);
         const filePath = path.join(
           __dirname,
+          '..',
           '..',
           '..',
           'public',

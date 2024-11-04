@@ -9,7 +9,7 @@ const HeroesListItem = ({ hero }: HeroesListItemProps) => {
   const defaultImage = '/profile-image.webp';
 
   const heroImage = hero.images?.[0]
-    ? `${import.meta.env.VITE_BACKEND_API}/uploads/${hero.images[0]}`
+    ? `${import.meta.env.VITE_BACKEND_API}${hero.images[0]}`
     : defaultImage;
 
   return (

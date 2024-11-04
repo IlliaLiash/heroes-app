@@ -59,21 +59,17 @@ const CreateHeroPage: React.FC = () => {
     }
   }, [isEdit, heroData]);
 
-  const handleCreate = async (
-    values: CreateHeroFormValues,
-    actions: FormikHelpers<CreateHeroFormValues>
-  ) => {
+  const handleCreate = async (values: CreateHeroFormValues) => {
     await createHeroMutation.mutateAsync(values, {
-      onSuccess: () => {
+      onSuccess: (data) => {
         toast.success('Hero created successfully!');
-        actions.resetForm();
+
+        navigate(`/${data._id}`);
       },
       onError: (error: any) => {
         toast.error(`Error creating hero: ${error.message}`);
       },
     });
-
-    actions.setSubmitting(false);
   };
 
   const handleUpdate = async (
